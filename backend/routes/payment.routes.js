@@ -1,7 +1,9 @@
 import express from 'express';
+import { confirmPayment } from '../controllers/payment.controller.js';
+
 const router = express.Router();
 
-// 임시 라우트 (에러 방지용)
-router.get('/', (req, res) => res.send('Payment Route OK'));
+// POST /api/payments/confirm
+router.post('/confirm', confirmPayment);
 
 export default router;

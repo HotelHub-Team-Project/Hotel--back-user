@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>토스 결제 테스트</title>
+    <script src="https://js.tosspayments.com/v1/payment"></script>
+</head>
+
+<body>
+    <h1>호텔 예약 결제 테스트</h1>
+    <button onclick="requestPayment()">결제하기 (30,000원)</button>
+
+    <script>
+        // 1. 클라이언트 키로 객체 초기화 (이미지의 키 사용됨)
+        const clientKey = 'test_ck_vZnjEJeQVxLR916Jw7ePVPmoOBN0';
+        const tossPayments = TossPayments(clientKey);
+
+        function requestPayment() {
+            // 2. 랜덤한 주문 ID 생성 (중복 방지)
+            const randomOrderId = 'ORDER_' + Math.random().toString(36).slice(2, 12);
+
+            // 3. 결제창 띄우기
+            tossPayments.requestPayment('카드', {
+                amount: 30000, // 결제 금액
+                orderId: randomOrderId, // 주문 ID
+                orderName: '디럭스 룸 1박', // 주문명
+                customerName: '김테스트', // 고객 이름
+                successUrl: window.location.origin + '/success', // 성공 시 이동할 URL (가짜)
+                failUrl: window.location.origin + '/fail',       // 실패 시 이동할 URL
+            })
+                .catch(function (error) {
+                    if (error.code === 'USER_CANCEL') {
+                        alert('사용자가 결제를 취소했습니다.');
+                    } else {
+                        alert(error.message);
+                    }
+                });
+        }
+    </script>
+</body>
+
+</html>
