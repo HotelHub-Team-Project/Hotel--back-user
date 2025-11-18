@@ -1,3 +1,4 @@
+// backend/app.js
 import 'dotenv/config'; // .env 파일 로드
 import express from 'express';
 import cors from 'cors';
