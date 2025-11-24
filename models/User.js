@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     phone: { type: String },
-    role: { type: String, enum: ['user', 'business', 'admin'], default: 'user' },
+    role: { type: String, enum: ['user', 'owner', 'admin'], default: 'user' },
 }, { timestamps: true });
 
 // 1. 저장 전 비밀번호 암호화 (Pre-save Hook)

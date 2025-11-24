@@ -66,3 +66,28 @@ export const loginUser = async (req, res, next) => {
         next(error);
     }
 };
+
+// @desc    내 정보 조회 (마이페이지)
+// @route   GET /api/auth/me
+export const getMyProfile = async (req, res, next) => {
+    try {
+        // authMiddleware를 통과했다면 req.user에 유저 정보가 있습니다.
+        const user = req.user;
+
+        res.status(200).json({
+            success: true,
+            message: '내 정보를 성공적으로 조회했습니다.',
+            data: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                // User 모델에 businessStatus 필드가 있다면 추가 (사업자 신청 상태 확인용)
+                businessStatus: user.businessStatus
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
