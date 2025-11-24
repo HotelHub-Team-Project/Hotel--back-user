@@ -1,3 +1,4 @@
+// services/reservation.service.js
 import Reservation from '../models/Reservation.js';
 
 // 예약 생성

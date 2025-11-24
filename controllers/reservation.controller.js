@@ -1,3 +1,4 @@
+// controllers/reservation.controller.js
 import * as reservationService from '../services/reservation.service.js';
 
 export const createReservation = async (req, res, next) => {

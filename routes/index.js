@@ -1,3 +1,4 @@
+// routes/index.js
 import express from 'express';
 import reservationRoutes from './reservation.routes.js';
 import paymentRoutes from './payment.routes.js';

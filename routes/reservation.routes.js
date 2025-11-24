@@ -1,3 +1,4 @@
+// routes/reservation.routes.js
 import express from 'express';
 import { createReservation, getReservation } from '../controllers/reservation.controller.js';
 
