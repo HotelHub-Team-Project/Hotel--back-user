@@ -1,3 +1,4 @@
+// services/payment.service.js
 import axios from 'axios';
 import Payment from '../models/Payment.js';
 import Reservation from '../models/Reservation.js'; // Reservation 모델 불러오기

@@ -1,3 +1,4 @@
+// controllers/payment.controller.js
 import * as paymentService from '../services/payment.service.js';
 
 export const confirmPayment = async (req, res, next) => {
