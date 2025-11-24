@@ -3,9 +3,13 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import connectDB from './config/db.js'; // .js 확장자 필수
+
+// [중요] 모델들을 가장 먼저 로딩하여 Mongoose에 등록시킴
+// 이렇게 하면 이후 컨트롤러나 서비스에서 populate('Hotel') 등을 쓸 때 에러가 안 납니다.
+import './models/index.js';
+
 import apiRoutes from './routes/index.js';
 import errorHandler from './middlewares/error.handler.js';
-import './models/index.js'; 
 
 const app = express();
 
