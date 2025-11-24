@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import connectDB from './config/db.js'; // .js 확장자 필수
 import apiRoutes from './routes/index.js';
 import errorHandler from './middlewares/error.handler.js';
+import './models/index.js'; 
 
 const app = express();
 
