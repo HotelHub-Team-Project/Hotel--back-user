@@ -44,6 +44,7 @@ export const confirmPayment = async (paymentKey, orderId, amount) => {
 
     } catch (error) {
         console.error('Toss Payment Error:', error.response?.data || error.message);
+        // Toss에서 보낸 에러 메시지를 그대로 클라이언트에 전달
         throw new Error(error.response?.data?.message || '결제 승인 중 오류가 발생했습니다.');
     }
 };
