@@ -3,10 +3,7 @@ import { createReservation, getReservation } from '../controllers/reservation.co
 
 const router = express.Router();
 
-// POST /api/reservations
 router.post('/', createReservation);
-
-// GET /api/reservations/:id
 router.get('/:id', getReservation);
 
 export default router;
