@@ -1,4 +1,4 @@
-// backend/models/Reservation.js
+// models/Reservation.js
 import mongoose from 'mongoose';
 
 const reservationSchema = new mongoose.Schema({

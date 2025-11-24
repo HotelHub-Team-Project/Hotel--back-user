@@ -1,4 +1,4 @@
-// backend/models/Payment.js
+// models/Payment.js
 import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
