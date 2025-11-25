@@ -1,16 +1,30 @@
+import Joi from "joi";
 import * as paymentService from "./service.js";
 import { successResponse, errorResponse } from "../common/response.js";
 
+const confirmSchema = Joi.object({
+  paymentKey: Joi.string().required(),
+  orderId: Joi.string().required(),
+  amount: Joi.number().positive().required(),
+});
+
+const cancelSchema = Joi.object({
+  paymentKey: Joi.string().required(),
+  cancelReason: Joi.string().allow("", null),
+});
+
 export const confirmPayment = async (req, res) => {
   try {
-    const { paymentKey, orderId, amount } = req.body;
-    if (!paymentKey || !orderId || !amount) {
+    const { error } = confirmSchema.validate(req.body);
+    if (error) {
       return res
         .status(400)
-        .json(errorResponse("PAYMENT_INFO_REQUIRED", 400));
+        .json(errorResponse(error.details[0].message, 400));
     }
 
+    const { paymentKey, orderId, amount } = req.body;
     const data = await paymentService.confirmPayment(
+      req.user._id,
       paymentKey,
       orderId,
       amount
@@ -28,12 +42,19 @@ export const confirmPayment = async (req, res) => {
 
 export const cancelPayment = async (req, res) => {
   try {
-    const { paymentKey, cancelReason } = req.body;
-    if (!paymentKey) {
-      return res.status(400).json(errorResponse("PAYMENT_KEY_REQUIRED", 400));
+    const { error } = cancelSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
     }
 
-    const data = await paymentService.cancelPayment(paymentKey, cancelReason);
+    const { paymentKey, cancelReason } = req.body;
+    const data = await paymentService.cancelPayment(
+      req.user._id,
+      paymentKey,
+      cancelReason
+    );
 
     return res
       .status(200)

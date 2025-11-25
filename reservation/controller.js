@@ -1,8 +1,25 @@
 import * as reservationService from "./service.js";
 import { successResponse, errorResponse } from "../common/response.js";
+import Joi from "joi";
+
+const createSchema = Joi.object({
+  room: Joi.string().required(),
+  hotelId: Joi.string().optional(), // backward compatibility if provided
+  checkIn: Joi.date().required(),
+  checkOut: Joi.date().required(),
+  guests: Joi.number().integer().min(1).required(),
+  totalPrice: Joi.number().min(0).required(),
+});
 
 export const createReservation = async (req, res) => {
   try {
+    const { error } = createSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+
     const userId = req.user._id;
     const data = await reservationService.createReservation(userId, req.body);
     return res

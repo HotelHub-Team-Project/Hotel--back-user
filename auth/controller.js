@@ -1,8 +1,28 @@
 import * as authService from "./service.js";
 import { successResponse, errorResponse } from "../common/response.js";
+import Joi from "joi";
+
+const registerSchema = Joi.object({
+  name: Joi.string().trim().required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required(),
+  phone: Joi.string().allow("", null),
+});
+
+const loginSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required(),
+});
 
 export const register = async (req, res) => {
   try {
+    const { error } = registerSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+
     const data = await authService.register(req.body);
     return res
       .status(201)
@@ -16,6 +36,13 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
+    const { error } = loginSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+
     const data = await authService.login(req.body);
     return res.status(200).json(successResponse(data, "LOGIN_SUCCESS", 200));
   } catch (err) {
@@ -71,9 +98,11 @@ export const kakaoCallback = async (req, res) => {
     const frontendRedirect = process.env.KAKAO_LOGIN_REDIRECT;
     if (frontendRedirect) {
       const url = new URL(frontendRedirect);
-      url.searchParams.set("token", data.token);
-      url.searchParams.set("name", data.name);
-      url.searchParams.set("email", data.email);
+      url.hash = `token=${encodeURIComponent(
+        data.token
+      )}&name=${encodeURIComponent(data.name || "")}&email=${encodeURIComponent(
+        data.email || ""
+      )}`;
       return res.redirect(url.toString());
     }
 
