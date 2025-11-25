@@ -1,6 +1,8 @@
 // controllers/reservation.controller.js
 import * as reservationService from '../services/reservation.service.js';
 import Reservation from '../models/Reservation.js';
+import Payment from '../models/Payment.js';
+import * as paymentService from '../services/payment.service.js';
 
 // @desc    예약 생성
 // @route   POST /api/reservations
@@ -57,11 +59,66 @@ export const getMyReservations = async (req, res, next) => {
 export const getReservation = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const reservation = await reservationService.getReservationById(id);
+        const reservation = await Reservation.findOne({ _id: id, userId: req.user._id });
+        if (!reservation) {
+            const err = new Error('예약을 찾을 수 없습니다.');
+            err.statusCode = 404;
+            throw err;
+        }
 
         res.status(200).json({
             success: true,
             data: reservation
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    예약 취소
+// @route   POST /api/reservations/:id/cancel
+export const cancelReservation = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user._id;
+        const { cancelReason = '사용자 취소' } = req.body;
+
+        const reservation = await Reservation.findOne({ _id: id, userId });
+        if (!reservation) {
+            const err = new Error('취소할 예약을 찾을 수 없습니다.');
+            err.statusCode = 404;
+            throw err;
+        }
+
+        if (reservation.status === 'cancelled') {
+            return res.status(200).json({
+                success: true,
+                message: '이미 취소된 예약입니다.',
+                data: reservation
+            });
+        }
+
+        let paymentResult;
+        if (reservation.paymentId) {
+            const payment = await Payment.findById(reservation.paymentId);
+            if (payment?.paymentKey) {
+                paymentResult = await paymentService.cancelPayment(payment.paymentKey, cancelReason);
+                payment.status = 'CANCELLED';
+                payment.canceledAt = new Date();
+                await payment.save();
+            }
+        }
+
+        reservation.status = 'cancelled';
+        await reservation.save();
+
+        res.status(200).json({
+            success: true,
+            message: '예약이 취소되었습니다.',
+            data: {
+                reservation,
+                payment: paymentResult
+            }
         });
     } catch (error) {
         next(error);

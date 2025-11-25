@@ -1,8 +1,14 @@
 // routes/review.routes.js
 import express from 'express';
+import { createReview, getReviews } from '../controllers/review.controller.js';
+import { protect } from '../middlewares/auth.middleware.js';
+
 const router = express.Router();
 
-// 임시 라우트 (에러 방지용)
-router.get('/', (req, res) => res.send('Review Route OK'));
+// 리뷰 작성 (로그인 필요)
+router.post('/', protect, createReview);
+
+// 리뷰 조회
+router.get('/', getReviews);
 
 export default router;

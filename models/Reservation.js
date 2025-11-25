@@ -27,6 +27,16 @@ const reservationSchema = new mongoose.Schema({
         default: 'pending'
     },
     paymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' }
-}, { timestamps: true });
+}, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
+
+reservationSchema.set('toJSON', {
+    virtuals: true,
+    transform: (_doc, ret) => {
+        ret.id = ret._id;
+        ret.reservationId = ret._id; // 가독성용 alias
+        delete ret._id;
+        delete ret.__v;
+    }
+});
 
 export default mongoose.model('Reservation', reservationSchema);
