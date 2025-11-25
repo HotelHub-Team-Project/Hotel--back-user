@@ -1,8 +1,25 @@
 import * as paymentMethodService from "./service.js";
 import { successResponse, errorResponse } from "../common/response.js";
+import Joi from "joi";
+
+const createSchema = Joi.object({
+  cardNumber: Joi.string().creditCard().required(),
+  cardExpirationYear: Joi.string().required(),
+  cardExpirationMonth: Joi.string().required(),
+  cardPassword: Joi.string().min(2).required(),
+  customerIdentityNumber: Joi.string().required(),
+  isDefault: Joi.boolean().optional(),
+});
 
 export const createPaymentMethod = async (req, res) => {
   try {
+    const { error } = createSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+
     const data = await paymentMethodService.addPaymentMethod(
       req.user._id,
       req.body

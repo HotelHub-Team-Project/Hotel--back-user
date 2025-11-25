@@ -12,7 +12,7 @@ const getSecretKey = () => {
   return key;
 };
 
-export const confirmPayment = async (paymentKey, orderId, amount) => {
+export const confirmPayment = async (userId, paymentKey, orderId, amount) => {
   try {
     const widgetSecretKey = getSecretKey();
     const encryptedSecretKey =
@@ -34,6 +34,12 @@ export const confirmPayment = async (paymentKey, orderId, amount) => {
     if (!reservation) {
       const err = new Error("RESERVATION_NOT_FOUND");
       err.statusCode = 404;
+      throw err;
+    }
+
+    if (reservation.userId.toString() !== userId.toString()) {
+      const err = new Error("FORBIDDEN");
+      err.statusCode = 403;
       throw err;
     }
 
@@ -62,6 +68,7 @@ export const confirmPayment = async (paymentKey, orderId, amount) => {
 };
 
 export const cancelPayment = async (
+  userId,
   paymentKey,
   cancelReason = "사용자 취소"
 ) => {
@@ -69,6 +76,22 @@ export const cancelPayment = async (
     const widgetSecretKey = getSecretKey();
     const encryptedSecretKey =
       "Basic " + Buffer.from(widgetSecretKey + ":").toString("base64");
+
+    // 사용자 소유권 검증
+    const payment = await Payment.findOne({ paymentKey });
+    if (!payment) {
+      const err = new Error("PAYMENT_NOT_FOUND");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (payment.reservationId) {
+      const reservation = await Reservation.findById(payment.reservationId);
+      if (reservation && reservation.userId.toString() !== userId.toString()) {
+        const err = new Error("FORBIDDEN");
+        err.statusCode = 403;
+        throw err;
+      }
+    }
 
     const response = await axios.post(
       `https://api.tosspayments.com/v1/payments/${paymentKey}/cancel`,
