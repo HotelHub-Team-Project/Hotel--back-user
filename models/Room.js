@@ -63,8 +63,20 @@ const roomSchema = new Schema(
     },
     {
         timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true },
     }
 );
+
+roomSchema.set('toJSON', {
+    virtuals: true,
+    transform: (_doc, ret) => {
+        ret.id = ret._id;
+        ret.roomId = ret._id; // 가독성용 alias
+        delete ret._id;
+        delete ret.__v;
+    }
+});
 
 const Room = mongoose.model("Room", roomSchema);
 export default Room;

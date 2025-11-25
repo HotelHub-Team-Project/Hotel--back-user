@@ -105,12 +105,24 @@ const hotelSchema = new Schema(
     },
     {
         timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true },
     }
 );
 
 // 필요하면 가상 필드, 인덱스 등도 여기서 추가 가능
 // 예: city + status 인덱스
 hotelSchema.index({ city: 1, status: 1 });
+
+hotelSchema.set('toJSON', {
+    virtuals: true,
+    transform: (_doc, ret) => {
+        ret.id = ret._id;
+        ret.hotelId = ret._id; // 가독성용 alias
+        delete ret._id;
+        delete ret.__v;
+    }
+});
 
 const Hotel = mongoose.model("Hotel", hotelSchema);
 export default Hotel;

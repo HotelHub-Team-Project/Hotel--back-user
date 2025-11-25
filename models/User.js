@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
         enum: ['none', 'pending', 'approved', 'rejected'],
         default: 'none'
     }
-}, { timestamps: true });
+}, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
 // 1. 저장 전 비밀번호 암호화 (Pre-save Hook)
 userSchema.pre('save', async function (next) {
@@ -34,5 +34,17 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
+
+// 응답 시 id alias 부여 및 불필요 필드 제거
+userSchema.set('toJSON', {
+    virtuals: true,
+    transform: (_doc, ret) => {
+        ret.id = ret._id;
+        ret.userId = ret._id; // 가독성용 alias
+        delete ret._id;
+        delete ret.__v;
+        delete ret.password;
+    }
+});
 
 export default mongoose.model('User', userSchema);

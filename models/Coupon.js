@@ -13,7 +13,17 @@ const couponSchema = new Schema({
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
     validFrom: { type: Date, default: Date.now },
     validTo: { type: Date },
-}, { timestamps: true });
+}, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
+
+couponSchema.set('toJSON', {
+    virtuals: true,
+    transform: (_doc, ret) => {
+        ret.id = ret._id;
+        ret.couponId = ret._id; // 가독성용 alias
+        delete ret._id;
+        delete ret.__v;
+    }
+});
 
 // 사용 가능 여부 체크용 헬퍼
 couponSchema.methods.isAvailableForUser = function (userId, now = new Date()) {
