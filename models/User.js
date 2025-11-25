@@ -8,6 +8,18 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     phone: { type: String },
     role: { type: String, enum: ['user', 'owner', 'admin'], default: 'user' },
+    // 사업자 신청 정보 (optional)
+    businessInfo: {
+        businessName: { type: String },
+        businessNumber: { type: String },
+        bankAccount: { type: String }
+    },
+    // 사업자 신청 상태 관리
+    businessStatus: {
+        type: String,
+        enum: ['none', 'pending', 'approved', 'rejected'],
+        default: 'none'
+    }
 }, { timestamps: true });
 
 // 1. 저장 전 비밀번호 암호화 (Pre-save Hook)

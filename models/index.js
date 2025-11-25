@@ -5,6 +5,8 @@ import Room from './Room.js';
 import Reservation from './Reservation.js';
 import Payment from './Payment.js';
 import Review from './Review.js';
+import Favorite from './Favorite.js';
+import Coupon from './Coupon.js';
 
 export {
     User,
@@ -12,5 +14,7 @@ export {
     Room,
     Reservation,
     Payment,
-    Review
+    Review,
+    Favorite,
+    Coupon
 };
