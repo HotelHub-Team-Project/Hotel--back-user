@@ -9,7 +9,7 @@
 
 <body>
     <h1>호텔 예약 결제 테스트</h1>
-    <button onclick="requestPayment()">결제하기 (30,000원)</button>
+    <button onclick="requestPayment()">결제하기 (9,000원)</button>
 
     <script>
         // 1. 클라이언트 키로 객체 초기화 (이미지의 키 사용됨)
@@ -19,14 +19,14 @@
         function requestPayment() {
             // [수정됨] 랜덤 ID 대신 아까 Postman에서 받은 "reservationId"를 넣습니다.
             // 이 ID가 백엔드에서 예약을 찾는 열쇠가 됩니다.
-            const orderId = '6924f58e4375a2549af0c532';
+            const orderId = '6928430ca4328a07ec1e3de1';
 
             // 결제창 띄우기
             tossPayments.requestPayment('카드', {
-                amount: 30000,          // 예약 생성 시 금액과 같아야 함
+                amount: 9000,          // 예약 생성 시 금액과 같아야 함
                 orderId: orderId,       // 여기로 예약 ID가 들어갑니다
-                orderName: '디럭스 룸 1박',
-                customerName: '김테스트',
+                orderName: '101호',
+                customerName: '홍유민',
                 successUrl: window.location.origin + '/success',
                 failUrl: window.location.origin + '/fail',
             })
