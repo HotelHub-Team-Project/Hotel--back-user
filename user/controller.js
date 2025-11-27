@@ -2,12 +2,6 @@ import * as userService from "./service.js";
 import { successResponse, errorResponse } from "../common/response.js";
 import Joi from "joi";
 
-const businessSchema = Joi.object({
-  businessName: Joi.string().trim().required(),
-  businessNumber: Joi.string().trim().required(),
-  bankAccount: Joi.string().trim().required(),
-});
-
 const profileSchema = Joi.object({
   name: Joi.string().trim().optional(),
   phone: Joi.string().trim().optional(),
@@ -24,32 +18,6 @@ const imageSchema = Joi.object({
   avatarUrl: Joi.string().uri().optional(),
   coverUrl: Joi.string().uri().optional(),
 }).or("avatarUrl", "coverUrl");
-
-export const applyBusiness = async (req, res) => {
-  try {
-    const { error } = businessSchema.validate(req.body);
-    if (error) {
-      return res
-        .status(400)
-        .json(errorResponse(error.details[0].message, 400));
-    }
-
-    const { businessName, businessNumber, bankAccount } = req.body;
-    const data = await userService.applyBusiness(req.user._id, {
-      businessName,
-      businessNumber,
-      bankAccount,
-    });
-
-    return res
-      .status(200)
-      .json(successResponse(data, "BUSINESS_APPLY_SUBMITTED", 200));
-  } catch (err) {
-    return res
-      .status(err.statusCode || 400)
-      .json(errorResponse(err.message, err.statusCode || 400));
-  }
-};
 
 export const updateProfile = async (req, res) => {
   try {

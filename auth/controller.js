@@ -9,16 +9,6 @@ const registerSchema = Joi.object({
   phone: Joi.string().allow("", null),
 });
 
-const businessRegisterSchema = Joi.object({
-  name: Joi.string().trim().required(),
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-  phone: Joi.string().allow("", null),
-  businessName: Joi.string().trim().required(),
-  businessNumber: Joi.string().trim().required(),
-  bankAccount: Joi.string().trim().required(),
-});
-
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
@@ -37,26 +27,6 @@ export const register = async (req, res) => {
     return res
       .status(201)
       .json(successResponse(data, "REGISTER_SUCCESS", 201));
-  } catch (err) {
-    return res
-      .status(err.statusCode || 400)
-      .json(errorResponse(err.message, err.statusCode || 400));
-  }
-};
-
-export const registerBusiness = async (req, res) => {
-  try {
-    const { error } = businessRegisterSchema.validate(req.body);
-    if (error) {
-      return res
-        .status(400)
-        .json(errorResponse(error.details[0].message, 400));
-    }
-
-    const data = await authService.registerBusiness(req.body);
-    return res
-      .status(201)
-      .json(successResponse(data, "BUSINESS_REGISTER_SUCCESS", 201));
   } catch (err) {
     return res
       .status(err.statusCode || 400)
