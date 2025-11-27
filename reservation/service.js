@@ -81,6 +81,7 @@ export const cancelReservation = async (id, userId, cancelReason = "사용자 �
     const payment = await Payment.findById(reservation.paymentId);
     if (payment?.paymentKey && payment.status !== "CANCELLED") {
       paymentResult = await paymentService.cancelPayment(
+        userId,
         payment.paymentKey,
         cancelReason
       );
