@@ -1,0 +1,26 @@
+name: Update Parent Repository
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  update-parent:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger parent repository update
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+            https://api.github.com/repos/HotelHub-Team-Project/HotelHub-Team-Project/dispatches \
+            -d '{"event_type":"submodule-update","client_payload":{"repository":"${{ github.repository }}","ref":"${{ github.ref }}","sha":"${{ github.sha }}"}}'
+      
+      - name: Notify update
+        run: |
+          echo "✅ Parent repository update triggered"
+          echo "Repository: ${{ github.repository }}"
+          echo "Commit: ${{ github.sha }}"
