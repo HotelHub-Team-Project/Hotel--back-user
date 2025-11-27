@@ -16,6 +16,11 @@ export const createReview = async (userId, payload) => {
     err.statusCode = 403;
     throw err;
   }
+  if (reservation.hotelId.toString() !== hotelId.toString()) {
+    const err = new Error("REVIEW_HOTEL_MISMATCH");
+    err.statusCode = 400;
+    throw err;
+  }
 
   const review = await Review.create({
     userId,

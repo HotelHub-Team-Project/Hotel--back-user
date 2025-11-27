@@ -18,6 +18,10 @@ const userSchema = new mongoose.Schema(
       enum: ["none", "pending", "approved", "rejected"],
       default: "none",
     },
+    address: { type: String },
+    dateOfBirth: { type: Date },
+    avatarUrl: { type: String },
+    coverUrl: { type: String },
   },
   {
     timestamps: true,

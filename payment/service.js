@@ -18,18 +18,6 @@ export const confirmPayment = async (userId, paymentKey, orderId, amount) => {
     const encryptedSecretKey =
       "Basic " + Buffer.from(widgetSecretKey + ":").toString("base64");
 
-    const response = await axios.post(
-      "https://api.tosspayments.com/v1/payments/confirm",
-      { paymentKey, orderId, amount },
-      {
-        headers: {
-          Authorization: encryptedSecretKey,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const paymentData = response.data;
     const reservation = await Reservation.findById(orderId);
     if (!reservation) {
       const err = new Error("RESERVATION_NOT_FOUND");
@@ -43,6 +31,26 @@ export const confirmPayment = async (userId, paymentKey, orderId, amount) => {
       throw err;
     }
 
+    if (typeof reservation.totalPrice === "number" && reservation.totalPrice > 0) {
+      if (Number(amount) !== Number(reservation.totalPrice)) {
+        const err = new Error("PAYMENT_AMOUNT_MISMATCH");
+        err.statusCode = 400;
+        throw err;
+      }
+    }
+
+    const response = await axios.post(
+      "https://api.tosspayments.com/v1/payments/confirm",
+      { paymentKey, orderId, amount },
+      {
+        headers: {
+          Authorization: encryptedSecretKey,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const paymentData = response.data;
     const payment = new Payment({
       reservationId: reservation._id,
       orderId: paymentData.orderId,

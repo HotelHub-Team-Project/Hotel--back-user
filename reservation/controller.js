@@ -3,17 +3,29 @@ import { successResponse, errorResponse } from "../common/response.js";
 import Joi from "joi";
 
 const createSchema = Joi.object({
-  room: Joi.string().required(),
+  roomId: Joi.string().required(),
   hotelId: Joi.string().optional(), // backward compatibility if provided
   checkIn: Joi.date().required(),
   checkOut: Joi.date().required(),
   guests: Joi.number().integer().min(1).required(),
   totalPrice: Joi.number().min(0).required(),
-});
+}).custom((value, helpers) => {
+  if (value.checkIn && value.checkOut && value.checkOut <= value.checkIn) {
+    return helpers.error("any.invalid", {
+      message: "CHECK_OUT_MUST_BE_AFTER_CHECK_IN",
+    });
+  }
+  return value;
+}, "date range validation");
 
 export const createReservation = async (req, res) => {
   try {
-    const { error } = createSchema.validate(req.body);
+    const payload = { ...req.body };
+    if (!payload.roomId && payload.room) {
+      payload.roomId = payload.room;
+    }
+
+    const { error } = createSchema.validate(payload);
     if (error) {
       return res
         .status(400)
@@ -21,7 +33,7 @@ export const createReservation = async (req, res) => {
     }
 
     const userId = req.user._id;
-    const data = await reservationService.createReservation(userId, req.body);
+    const data = await reservationService.createReservation(userId, payload);
     return res
       .status(201)
       .json(successResponse(data, "RESERVATION_CREATED", 201));

@@ -1,10 +1,41 @@
 import { Reservation } from "./model.js";
 import { Payment } from "../payment/model.js";
 import * as paymentService from "../payment/service.js";
+import { Room } from "../room/model.js";
 
 export const createReservation = async (userId, data) => {
+  const { roomId, hotelId, guests } = data;
+
+  const room = await Room.findById(roomId).populate("hotel");
+  if (!room || room.status !== "active") {
+    const err = new Error("ROOM_NOT_AVAILABLE");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (guests && room.capacity < guests) {
+    const err = new Error("ROOM_CAPACITY_EXCEEDED");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const targetHotelId = hotelId || room.hotel?._id || room.hotel;
+  if (!targetHotelId) {
+    const err = new Error("HOTEL_NOT_FOUND_FOR_ROOM");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (hotelId && room.hotel && room.hotel._id.toString() !== hotelId.toString()) {
+    const err = new Error("ROOM_NOT_IN_HOTEL");
+    err.statusCode = 400;
+    throw err;
+  }
+
   const reservation = new Reservation({
     ...data,
+    roomId: room._id,
+    hotelId: targetHotelId,
     userId,
     status: "pending",
   });
