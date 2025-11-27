@@ -17,8 +17,6 @@ const buildAuthResponse = (user) => ({
   _id: user._id,
   name: user.name,
   email: user.email,
-  role: user.role,
-  businessStatus: user.businessStatus,
   token: signToken(user._id),
 });
 
@@ -44,47 +42,12 @@ export const login = async ({ email, password }) => {
   throw err;
 };
 
-export const registerBusiness = async ({
-  name,
-  email,
-  password,
-  phone,
-  businessName,
-  businessNumber,
-  bankAccount,
-}) => {
-  const exists = await User.findOne({ email });
-  if (exists) {
-    const err = new Error("USER_ALREADY_EXISTS");
-    err.statusCode = 400;
-    throw err;
-  }
-
-  const user = await User.create({
-    name,
-    email,
-    password,
-    phone,
-    role: "owner",
-    businessStatus: "approved",
-    businessInfo: {
-      businessName,
-      businessNumber,
-      bankAccount,
-    },
-  });
-
-  return buildAuthResponse(user);
-};
-
 export const getProfile = (user) => {
   return {
     _id: user._id,
     name: user.name,
     email: user.email,
     phone: user.phone,
-    role: user.role,
-    businessStatus: user.businessStatus,
   };
 };
 
