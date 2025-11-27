@@ -14,6 +14,33 @@ const loginSchema = Joi.object({
   password: Joi.string().min(6).required(),
 });
 
+const emailCodeSchema = Joi.object({
+  email: Joi.string().email().required(),
+});
+
+const verifyEmailSchema = Joi.object({
+  email: Joi.string().email().required(),
+  code: Joi.string().required(),
+});
+
+const forgotPasswordSchema = Joi.object({
+  email: Joi.string().email().required(),
+});
+
+const resetPasswordSchema = Joi.object({
+  email: Joi.string().email().required(),
+  code: Joi.string().required(),
+  newPassword: Joi.string().min(6).required(),
+});
+
+const emailChangeRequestSchema = Joi.object({
+  newEmail: Joi.string().email().required(),
+});
+
+const emailChangeConfirmSchema = Joi.object({
+  code: Joi.string().required(),
+});
+
 export const register = async (req, res) => {
   try {
     const { error } = registerSchema.validate(req.body);
@@ -56,6 +83,120 @@ export const me = async (req, res) => {
   try {
     const data = authService.getProfile(req.user);
     return res.status(200).json(successResponse(data, "PROFILE", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const sendEmailVerificationCode = async (req, res) => {
+  try {
+    const { error } = emailCodeSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+    const data = await authService.sendEmailVerificationCode(req.body);
+    return res
+      .status(200)
+      .json(successResponse(data, "EMAIL_VERIFICATION_CODE_SENT", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const verifyEmailCode = async (req, res) => {
+  try {
+    const { error } = verifyEmailSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+    const data = await authService.verifyEmailCode(req.body);
+    return res
+      .status(200)
+      .json(successResponse(data, "EMAIL_VERIFIED", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { error } = forgotPasswordSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+    const data = await authService.requestPasswordReset(req.body);
+    return res
+      .status(200)
+      .json(successResponse(data, "RESET_CODE_SENT", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { error } = resetPasswordSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+    const data = await authService.resetPassword(req.body);
+    return res
+      .status(200)
+      .json(successResponse(data, "PASSWORD_RESET", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const requestEmailChange = async (req, res) => {
+  try {
+    const { error } = emailChangeRequestSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+    const data = await authService.requestEmailChange(req.user._id, req.body);
+    return res
+      .status(200)
+      .json(successResponse(data, "EMAIL_CHANGE_CODE_SENT", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const confirmEmailChange = async (req, res) => {
+  try {
+    const { error } = emailChangeConfirmSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+    const data = await authService.confirmEmailChange(req.user._id, req.body);
+    return res
+      .status(200)
+      .json(successResponse(data, "EMAIL_CHANGED", 200));
   } catch (err) {
     return res
       .status(err.statusCode || 400)

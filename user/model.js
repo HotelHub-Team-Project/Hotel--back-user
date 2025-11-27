@@ -7,6 +7,14 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     phone: { type: String },
+    emailVerified: { type: Boolean, default: false },
+    emailVerificationCode: { type: String },
+    emailVerificationExpires: { type: Date },
+    passwordResetCode: { type: String },
+    passwordResetExpires: { type: Date },
+    pendingEmail: { type: String },
+    emailChangeCode: { type: String },
+    emailChangeExpires: { type: Date },
     address: { type: String },
     dateOfBirth: { type: Date },
     avatarUrl: { type: String },
@@ -38,6 +46,12 @@ userSchema.set("toJSON", {
     delete ret._id;
     delete ret.__v;
     delete ret.password;
+    delete ret.emailVerificationCode;
+    delete ret.emailVerificationExpires;
+    delete ret.passwordResetCode;
+    delete ret.passwordResetExpires;
+    delete ret.emailChangeCode;
+    delete ret.emailChangeExpires;
   },
 });
 

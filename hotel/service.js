@@ -8,15 +8,59 @@ const normalizeHotels = (docs) =>
     typeof doc.toJSON === "function" ? doc.toJSON() : Hotel.hydrate(doc).toJSON()
   );
 
-export const listHotels = async ({ city, guests, sort, page = 1, limit = 10 }) => {
+const parseArray = (value) =>
+  typeof value === "string"
+    ? value
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean)
+    : [];
+
+export const listHotels = async ({
+  city,
+  guests,
+  sort,
+  page = 1,
+  limit = 10,
+  priceMin,
+  priceMax,
+  ratingMin,
+  amenities,
+  freebies,
+}) => {
   const query = { status: "approved" };
   if (city) query.city = city;
+  if (ratingMin !== undefined) {
+    query.ratingAverage = { $gte: Number(ratingMin) };
+  }
 
-  if (guests) {
-    const rooms = await Room.find({
-      capacity: { $gte: Number(guests) },
-      status: "active",
-    }).distinct("hotel");
+  const amenitiesList = parseArray(amenities);
+  const freebiesList = parseArray(freebies);
+
+  // 추가 필터가 있을 때만 rooms 조회로 필터링
+  const needsRoomFilter =
+    guests ||
+    priceMin !== undefined ||
+    priceMax !== undefined ||
+    amenitiesList.length ||
+    freebiesList.length;
+
+  if (needsRoomFilter) {
+    const requiredAmenities = [...amenitiesList, ...freebiesList];
+
+    const roomFilter = { status: "active" };
+    if (guests) roomFilter.capacity = { $gte: Number(guests) };
+
+    const priceFilter = {};
+    if (priceMin !== undefined) priceFilter.$gte = Number(priceMin);
+    if (priceMax !== undefined) priceFilter.$lte = Number(priceMax);
+    if (Object.keys(priceFilter).length) roomFilter.price = priceFilter;
+
+    if (requiredAmenities.length) {
+      roomFilter.amenities = { $all: requiredAmenities };
+    }
+
+    const rooms = await Room.find(roomFilter).distinct("hotel");
     query._id = { $in: rooms };
   }
 
