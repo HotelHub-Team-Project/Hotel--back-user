@@ -13,6 +13,15 @@ const generateSocialPassword = (providerId) =>
 const ensureEmail = (email, providerId) =>
   email || `kakao_${providerId}@kakao.local`;
 
+const buildAuthResponse = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  businessStatus: user.businessStatus,
+  token: signToken(user._id),
+});
+
 export const register = async ({ name, email, password, phone }) => {
   const exists = await User.findOne({ email });
   if (exists) {
@@ -22,27 +31,50 @@ export const register = async ({ name, email, password, phone }) => {
   }
 
   const user = await User.create({ name, email, password, phone });
-  return {
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    token: signToken(user._id),
-  };
+  return buildAuthResponse(user);
 };
 
 export const login = async ({ email, password }) => {
   const user = await User.findOne({ email });
   if (user && (await user.matchPassword(password))) {
-    return {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      token: signToken(user._id),
-    };
+    return buildAuthResponse(user);
   }
   const err = new Error("INVALID_CREDENTIALS");
   err.statusCode = 401;
   throw err;
+};
+
+export const registerBusiness = async ({
+  name,
+  email,
+  password,
+  phone,
+  businessName,
+  businessNumber,
+  bankAccount,
+}) => {
+  const exists = await User.findOne({ email });
+  if (exists) {
+    const err = new Error("USER_ALREADY_EXISTS");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const user = await User.create({
+    name,
+    email,
+    password,
+    phone,
+    role: "owner",
+    businessStatus: "approved",
+    businessInfo: {
+      businessName,
+      businessNumber,
+      bankAccount,
+    },
+  });
+
+  return buildAuthResponse(user);
 };
 
 export const getProfile = (user) => {
@@ -117,11 +149,5 @@ export const kakaoLogin = async ({ code, redirectUri }) => {
     });
   }
 
-  return {
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    token: signToken(user._id),
-    provider: "kakao",
-  };
+  return { ...buildAuthResponse(user), provider: "kakao" };
 };
