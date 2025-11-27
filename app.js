@@ -5,6 +5,7 @@ import morgan from "morgan";
 import { connectDB } from "./config/db.js";
 import apiRoutes from "./routes/index.js";
 import errorHandler from "./common/errorHandler.js";
+import { successResponse } from "./common/response.js";
 
 const app = express();
 
@@ -24,12 +25,14 @@ app.use(morgan("dev"));
 app.use("/api", apiRoutes);
 
 app.get("/health", (_req, res) => {
-  res.status(200).json({ status: "ok", message: "Server is running!" });
+  res
+    .status(200)
+    .json(successResponse({ status: "ok" }, "Server is running!", 200));
 });
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
 });

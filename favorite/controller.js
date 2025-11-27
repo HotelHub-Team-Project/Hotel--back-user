@@ -1,5 +1,10 @@
 import * as favoriteService from "./service.js";
 import { successResponse, errorResponse } from "../common/response.js";
+import Joi from "joi";
+
+const addSchema = Joi.object({
+  hotelId: Joi.string().required(),
+});
 
 export const listFavorites = async (req, res) => {
   try {
@@ -14,6 +19,13 @@ export const listFavorites = async (req, res) => {
 
 export const addFavorite = async (req, res) => {
   try {
+    const { error } = addSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+
     const { hotelId } = req.body;
     const data = await favoriteService.addFavorite(req.user._id, hotelId);
     return res.status(201).json(successResponse(data, "FAVORITE_ADDED", 201));
