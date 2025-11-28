@@ -4,8 +4,34 @@ import { successResponse, errorResponse } from "../common/response.js";
 
 export const listHotels = async (req, res) => {
   try {
-    const { city, guests, sort, page, limit } = req.query;
-    const data = await hotelService.listHotels({ city, guests, sort, page, limit });
+    const {
+      city,
+      guests,
+      sort,
+      page,
+      limit,
+      priceMin,
+      priceMax,
+      ratingMin,
+      amenities,
+      freebies,
+      checkIn,
+      checkOut,
+    } = req.query;
+    const data = await hotelService.listHotels({
+      city,
+      guests,
+      sort,
+      page,
+      limit,
+      priceMin,
+      priceMax,
+      ratingMin,
+      amenities,
+      freebies,
+      checkIn,
+      checkOut,
+    });
     return res.status(200).json(successResponse(data, "HOTEL_LIST", 200));
   } catch (err) {
     return res
