@@ -6,6 +6,11 @@ const confirmSchema = Joi.object({
   paymentKey: Joi.string().required(),
   orderId: Joi.string().required(),
   amount: Joi.number().positive().required(),
+  reservationId: Joi.string().required(),
+  roomId: Joi.string().optional(),
+  customerName: Joi.string().optional(),
+  customerEmail: Joi.string().email().optional(),
+  customerPhone: Joi.string().optional(),
 });
 
 const cancelSchema = Joi.object({
@@ -22,13 +27,7 @@ export const confirmPayment = async (req, res) => {
         .json(errorResponse(error.details[0].message, 400));
     }
 
-    const { paymentKey, orderId, amount } = req.body;
-    const data = await paymentService.confirmPayment(
-      req.user._id,
-      paymentKey,
-      orderId,
-      amount
-    );
+    const data = await paymentService.confirmPayment(req.user._id, req.body);
 
     return res
       .status(200)
@@ -49,12 +48,7 @@ export const cancelPayment = async (req, res) => {
         .json(errorResponse(error.details[0].message, 400));
     }
 
-    const { paymentKey, cancelReason } = req.body;
-    const data = await paymentService.cancelPayment(
-      req.user._id,
-      paymentKey,
-      cancelReason
-    );
+    const data = await paymentService.cancelPayment(req.user._id, req.body);
 
     return res
       .status(200)

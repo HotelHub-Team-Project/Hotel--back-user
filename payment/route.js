@@ -4,7 +4,8 @@ import { verifyToken } from "../common/authMiddleware.js";
 
 const router = Router();
 
-router.post("/toss/confirm", verifyToken, confirmPayment);
-router.post("/toss/cancel", verifyToken, cancelPayment);
+// PG(Toss) 결제 승인/취소
+router.post("/confirm", verifyToken, confirmPayment);
+router.post("/cancel", verifyToken, cancelPayment);
 
 export default router;

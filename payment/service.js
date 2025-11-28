@@ -12,13 +12,16 @@ const getSecretKey = () => {
   return key;
 };
 
-export const confirmPayment = async (userId, paymentKey, orderId, amount) => {
+export const confirmPayment = async (
+  userId,
+  { paymentKey, orderId, amount, reservationId, roomId }
+) => {
   try {
     const widgetSecretKey = getSecretKey();
     const encryptedSecretKey =
       "Basic " + Buffer.from(widgetSecretKey + ":").toString("base64");
 
-    const reservation = await Reservation.findById(orderId);
+    const reservation = await Reservation.findById(reservationId);
     if (!reservation) {
       const err = new Error("RESERVATION_NOT_FOUND");
       err.statusCode = 404;
@@ -28,6 +31,12 @@ export const confirmPayment = async (userId, paymentKey, orderId, amount) => {
     if (reservation.userId.toString() !== userId.toString()) {
       const err = new Error("FORBIDDEN");
       err.statusCode = 403;
+      throw err;
+    }
+
+    if (roomId && reservation.roomId.toString() !== roomId.toString()) {
+      const err = new Error("ROOM_MISMATCH");
+      err.statusCode = 400;
       throw err;
     }
 
@@ -77,15 +86,14 @@ export const confirmPayment = async (userId, paymentKey, orderId, amount) => {
 
 export const cancelPayment = async (
   userId,
-  paymentKey,
-  cancelReason = "사용자 취소"
+  { paymentKey, cancelReason = "사용자 취소" }
 ) => {
   try {
     const widgetSecretKey = getSecretKey();
     const encryptedSecretKey =
       "Basic " + Buffer.from(widgetSecretKey + ":").toString("base64");
 
-    // 사용자 소유권 검증
+    // 결제 소유자 확인
     const payment = await Payment.findOne({ paymentKey });
     if (!payment) {
       const err = new Error("PAYMENT_NOT_FOUND");
@@ -112,7 +120,21 @@ export const cancelPayment = async (
       }
     );
 
-    return response.data;
+    const cancelData = response.data;
+
+    payment.status = "CANCELLED";
+    payment.canceledAt = cancelData?.canceledAt || new Date();
+    await payment.save();
+
+    if (payment.reservationId) {
+      const reservation = await Reservation.findById(payment.reservationId);
+      if (reservation) {
+        reservation.status = "cancelled";
+        await reservation.save();
+      }
+    }
+
+    return cancelData;
   } catch (error) {
     console.error(
       "Toss Payment Cancel Error:",
