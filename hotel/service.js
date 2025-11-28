@@ -1,6 +1,7 @@
 import { Hotel } from "./model.js";
 import { Room } from "../room/model.js";
 import { Review } from "../review/model.js";
+import { Reservation } from "../reservation/model.js";
 import * as roomService from "../room/service.js";
 
 const normalizeHotels = (docs) =>
@@ -16,6 +17,18 @@ const parseArray = (value) =>
         .filter(Boolean)
     : [];
 
+const getReservedRoomIds = async (checkIn, checkOut) => {
+  if (!checkIn || !checkOut) return [];
+
+  const overlap = await Reservation.find({
+    status: { $nin: ["cancelled"] },
+    checkIn: { $lt: new Date(checkOut) },
+    checkOut: { $gt: new Date(checkIn) },
+  }).select("roomId");
+
+  return overlap.map((r) => r.roomId);
+};
+
 export const listHotels = async ({
   city,
   guests,
@@ -27,6 +40,8 @@ export const listHotels = async ({
   ratingMin,
   amenities,
   freebies,
+  checkIn,
+  checkOut,
 }) => {
   const query = { status: "approved" };
   if (city) query.city = city;
@@ -43,7 +58,8 @@ export const listHotels = async ({
     priceMin !== undefined ||
     priceMax !== undefined ||
     amenitiesList.length ||
-    freebiesList.length;
+    freebiesList.length ||
+    (checkIn && checkOut);
 
   if (needsRoomFilter) {
     const requiredAmenities = [...amenitiesList, ...freebiesList];
@@ -55,6 +71,13 @@ export const listHotels = async ({
     if (priceMin !== undefined) priceFilter.$gte = Number(priceMin);
     if (priceMax !== undefined) priceFilter.$lte = Number(priceMax);
     if (Object.keys(priceFilter).length) roomFilter.price = priceFilter;
+
+    if (checkIn && checkOut) {
+      const reservedRoomIds = await getReservedRoomIds(checkIn, checkOut);
+      if (reservedRoomIds.length) {
+        roomFilter._id = { $nin: reservedRoomIds };
+      }
+    }
 
     if (requiredAmenities.length) {
       roomFilter.amenities = { $all: requiredAmenities };
