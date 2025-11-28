@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { businessConnection } from "../config/db.js";
 
 const paymentMethodSchema = new mongoose.Schema(
   {
@@ -31,5 +32,5 @@ paymentMethodSchema.set("toJSON", {
   },
 });
 
-export const PaymentMethod = mongoose.model("PaymentMethod", paymentMethodSchema);
+export const PaymentMethod = businessConnection.model("PaymentMethod", paymentMethodSchema);
 export default PaymentMethod;

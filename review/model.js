@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { serviceConnection } from "../config/db.js";
 
 const { Schema } = mongoose;
 
@@ -29,5 +30,5 @@ reviewSchema.set("toJSON", {
   },
 });
 
-export const Review = mongoose.model("Review", reviewSchema);
+export const Review = serviceConnection.model("Review", reviewSchema);
 export default Review;

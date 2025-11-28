@@ -9,9 +9,6 @@ import { successResponse } from "./common/response.js";
 
 const app = express();
 
-// DB 연결
-connectDB();
-
 app.use(
   cors({
     origin: process.env.FRONT_ORIGIN || "http://localhost:5173",
@@ -32,7 +29,15 @@ app.get("/health", (_req, res) => {
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Server is running on port ${PORT}`);
+const startServer = async () => {
+  await connectDB();
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+};
+
+startServer().catch((err) => {
+  console.error("Server start failed:", err.message);
+  process.exit(1);
 });
