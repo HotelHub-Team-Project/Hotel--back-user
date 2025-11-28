@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { userConnection } from "../config/db.js";
 
 const { Schema } = mongoose;
 
@@ -22,5 +23,5 @@ favoriteSchema.set("toJSON", {
   },
 });
 
-export const Favorite = mongoose.model("Favorite", favoriteSchema);
+export const Favorite = userConnection.model("Favorite", favoriteSchema);
 export default Favorite;

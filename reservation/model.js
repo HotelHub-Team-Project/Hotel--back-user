@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { serviceConnection } from "../config/db.js";
 
 const reservationSchema = new mongoose.Schema(
   {
@@ -45,5 +46,5 @@ reservationSchema.set("toJSON", {
   },
 });
 
-export const Reservation = mongoose.model("Reservation", reservationSchema);
+export const Reservation = serviceConnection.model("Reservation", reservationSchema);
 export default Reservation;

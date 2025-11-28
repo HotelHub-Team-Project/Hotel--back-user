@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { businessConnection } from "../config/db.js";
 
 const { Schema } = mongoose;
 
@@ -41,5 +42,5 @@ hotelSchema.set("toJSON", {
   },
 });
 
-export const Hotel = mongoose.model("Hotel", hotelSchema);
+export const Hotel = businessConnection.model("Hotel", hotelSchema);
 export default Hotel;
