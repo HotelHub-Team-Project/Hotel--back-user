@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Payment } from "./model.js";
 import { Reservation } from "../reservation/model.js";
+import * as couponService from "../coupon/service.js";
 
 const getSecretKey = () => {
   const key = process.env.TOSS_SECRET_KEY;
@@ -25,6 +26,23 @@ export const confirmPayment = async (
     if (!reservation) {
       const err = new Error("RESERVATION_NOT_FOUND");
       err.statusCode = 404;
+      throw err;
+    }
+
+    if (reservation.couponId) {
+      await couponService.validateCouponForReservation(userId, reservation);
+    }
+
+    const existingPayment = await Payment.findOne({ paymentKey });
+    if (existingPayment) {
+      const err = new Error("PAYMENT_ALREADY_PROCESSED");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (reservation.paymentId) {
+      const err = new Error("PAYMENT_ALREADY_PROCESSED");
+      err.statusCode = 400;
       throw err;
     }
 
@@ -71,7 +89,14 @@ export const confirmPayment = async (
 
     reservation.status = "confirmed";
     reservation.paymentId = payment._id;
+    if (reservation.couponId) {
+      reservation.couponUsed = true;
+    }
     await reservation.save();
+
+    if (reservation.couponId) {
+      await couponService.markCouponUsed(reservation.couponId, reservation.userId);
+    }
 
     return paymentData;
   } catch (error) {

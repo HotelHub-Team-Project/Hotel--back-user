@@ -3,11 +3,12 @@ import { successResponse, errorResponse } from "../common/response.js";
 import Joi from "joi";
 
 const createSchema = Joi.object({
-  cardNumber: Joi.string().creditCard().required(),
-  cardExpirationYear: Joi.string().required(),
-  cardExpirationMonth: Joi.string().required(),
-  cardPassword: Joi.string().min(2).required(),
-  customerIdentityNumber: Joi.string().required(),
+  cardNumber: Joi.string().min(12).max(30).required(),
+  cardExpirationYear: Joi.string().min(2).max(4).required(),
+  cardExpirationMonth: Joi.string().min(1).max(2).required(),
+  cardHolder: Joi.string().optional(),
+  nickname: Joi.string().optional(),
+  cardBrand: Joi.string().optional(),
   isDefault: Joi.boolean().optional(),
 });
 

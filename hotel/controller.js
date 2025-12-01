@@ -6,6 +6,7 @@ export const listHotels = async (req, res) => {
   try {
     const {
       city,
+      keyword,
       guests,
       sort,
       page,
@@ -20,6 +21,7 @@ export const listHotels = async (req, res) => {
     } = req.query;
     const data = await hotelService.listHotels({
       city,
+      keyword,
       guests,
       sort,
       page,
@@ -31,6 +33,7 @@ export const listHotels = async (req, res) => {
       freebies,
       checkIn,
       checkOut,
+      userId: req.user?._id,
     });
     return res.status(200).json(successResponse(data, "HOTEL_LIST", 200));
   } catch (err) {
@@ -42,7 +45,12 @@ export const listHotels = async (req, res) => {
 
 export const getHotelDetail = async (req, res) => {
   try {
-    const data = await hotelService.getHotelDetail(req.params.id);
+    const { checkIn, checkOut } = req.query;
+    const data = await hotelService.getHotelDetail(req.params.id, {
+      checkIn,
+      checkOut,
+      userId: req.user?._id,
+    });
     return res.status(200).json(successResponse(data, "HOTEL_DETAIL", 200));
   } catch (err) {
     return res
@@ -53,7 +61,11 @@ export const getHotelDetail = async (req, res) => {
 
 export const listRoomsByHotel = async (req, res) => {
   try {
-    const data = await hotelService.listRoomsByHotel(req.params.id);
+    const { checkIn, checkOut } = req.query;
+    const data = await hotelService.listRoomsByHotel(req.params.id, {
+      checkIn,
+      checkOut,
+    });
     return res.status(200).json(successResponse(data, "ROOMS_BY_HOTEL", 200));
   } catch (err) {
     return res

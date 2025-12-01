@@ -1,4 +1,5 @@
 import { User } from "./model.js";
+import { deleteObjectByUrl } from "../common/s3.js";
 
 export const updateProfile = async (userId, payload) => {
   const user = await User.findById(userId);
@@ -46,9 +47,20 @@ export const updateProfileImage = async (userId, { avatarUrl, coverUrl }) => {
     throw err;
   }
 
+  const oldAvatar = user.avatarUrl;
+  const oldCover = user.coverUrl;
+
   if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
   if (coverUrl !== undefined) user.coverUrl = coverUrl;
 
   await user.save();
+
+  if (avatarUrl && oldAvatar && avatarUrl !== oldAvatar) {
+    await deleteObjectByUrl(oldAvatar);
+  }
+  if (coverUrl && oldCover && coverUrl !== oldCover) {
+    await deleteObjectByUrl(oldCover);
+  }
+
   return user.toJSON();
 };

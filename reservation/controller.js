@@ -8,7 +8,7 @@ const createSchema = Joi.object({
   checkIn: Joi.date().required(),
   checkOut: Joi.date().required(),
   guests: Joi.number().integer().min(1).required(),
-  totalPrice: Joi.number().min(0).required(),
+  couponCode: Joi.string().trim().optional(),
 }).custom((value, helpers) => {
   if (value.checkIn && value.checkOut && value.checkOut <= value.checkIn) {
     return helpers.error("any.invalid", {

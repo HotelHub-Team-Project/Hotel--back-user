@@ -41,3 +41,19 @@ export const requireRole = (role) => {
     next();
   };
 };
+
+export const optionalAuth = async (req, _res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return next();
+  const token = authHeader.split(" ")[1];
+  if (!token) return next();
+  try {
+    const secret = process.env.JWT_SECRET || process.env.JWT_SECRET_KEY;
+    const decoded = jwt.verify(token, secret);
+    const user = await User.findById(decoded.id).select("-password");
+    if (user) req.user = user;
+  } catch (err) {
+    // 무시하고 비인증으로 진행
+  }
+  return next();
+};

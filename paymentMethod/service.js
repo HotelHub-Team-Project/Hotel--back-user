@@ -1,44 +1,14 @@
-import axios from "axios";
 import PaymentMethod from "./model.js";
 
-const getSecretKey = () => {
-  const key = process.env.TOSS_SECRET_KEY;
-  if (!key) {
-    const err = new Error("TOSS_SECRET_KEY_NOT_SET");
-    err.statusCode = 500;
-    throw err;
-  }
-  return key;
-};
+const normalizeCardNumber = (cardNumber) =>
+  (cardNumber || "").replace(/\D/g, "");
 
-const issueBillingKey = async (payload) => {
-  try {
-    const secretKey = getSecretKey();
-    const encryptedSecretKey =
-      "Basic " + Buffer.from(secretKey + ":").toString("base64");
-
-    const response = await axios.post(
-      "https://api.tosspayments.com/v1/billing/authorizations/card",
-      payload,
-      {
-        headers: {
-          Authorization: encryptedSecretKey,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error(
-      "Toss BillingKey Error:",
-      error.response?.data || error.message
-    );
-    const err = new Error(
-      error.response?.data?.message || "BILLING_KEY_ISSUE_FAILED"
-    );
-    err.statusCode = error.response?.status || error.statusCode || 500;
-    throw err;
-  }
+const detectBrand = (digits) => {
+  if (digits.startsWith("4")) return "VISA";
+  if (/^5[1-5]/.test(digits)) return "MASTERCARD";
+  if (/^3[47]/.test(digits)) return "AMEX";
+  if (/^6(011|5)/.test(digits)) return "DISCOVER";
+  return undefined;
 };
 
 export const addPaymentMethod = async (userId, payload) => {
@@ -46,21 +16,21 @@ export const addPaymentMethod = async (userId, payload) => {
     cardNumber,
     cardExpirationYear,
     cardExpirationMonth,
-    cardPassword,
-    customerIdentityNumber,
+    cardHolder,
+    nickname,
     isDefault,
   } = payload;
 
-  const billingResult = await issueBillingKey({
-    customerKey: userId.toString(),
-    cardNumber,
-    cardExpirationYear,
-    cardExpirationMonth,
-    cardPassword,
-    customerIdentityNumber,
-  });
+  const digits = normalizeCardNumber(cardNumber);
+  if (digits.length < 12 || digits.length > 19) {
+    const err = new Error("INVALID_CARD_NUMBER");
+    err.statusCode = 400;
+    throw err;
+  }
 
-  const cardInfo = billingResult.card || {};
+  const last4 = digits.slice(-4);
+  const masked = digits.replace(/.(?=.{4})/g, "*");
+  const brand = detectBrand(digits) || payload.cardBrand || undefined;
 
   if (isDefault) {
     await PaymentMethod.updateMany({ userId }, { isDefault: false });
@@ -68,14 +38,13 @@ export const addPaymentMethod = async (userId, payload) => {
 
   const method = await PaymentMethod.create({
     userId,
-    provider: "toss",
-    billingKey: billingResult.billingKey,
-    cardBrand: cardInfo.company, // toss 명칭
-    cardIssuer: cardInfo.issuerCode,
-    cardLast4: cardInfo.number?.slice(-4),
-    cardNumberMasked: cardInfo.number,
-    cardType: cardInfo.cardType,
-    country: cardInfo.country,
+    provider: "manual",
+    nickname: nickname || cardHolder || brand,
+    cardBrand: brand,
+    cardLast4: last4,
+    cardNumberMasked: masked,
+    cardExpirationMonth,
+    cardExpirationYear,
     isDefault: !!isDefault,
   });
 

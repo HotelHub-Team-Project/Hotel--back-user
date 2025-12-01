@@ -28,6 +28,11 @@ const reservationSchema = new mongoose.Schema(
       default: "pending",
     },
     paymentId: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" },
+    basePrice: { type: Number, default: 0 },
+    discountAmount: { type: Number, default: 0 },
+    couponId: { type: mongoose.Schema.Types.ObjectId, ref: "Coupon" },
+    couponCode: { type: String },
+    couponUsed: { type: Boolean, default: false },
   },
   {
     timestamps: true,

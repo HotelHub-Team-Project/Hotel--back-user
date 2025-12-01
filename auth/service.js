@@ -66,12 +66,35 @@ export const register = async ({ name, email, password, phone }) => {
 
 export const login = async ({ email, password }) => {
   const user = await User.findOne({ email });
-  if (user && (await user.matchPassword(password))) {
-    return buildAuthResponse(user);
+  if (!user) {
+    const err = new Error("INVALID_CREDENTIALS");
+    err.statusCode = 401;
+    throw err;
   }
-  const err = new Error("INVALID_CREDENTIALS");
-  err.statusCode = 401;
-  throw err;
+
+  if (user.lockUntil && user.lockUntil.getTime() > Date.now()) {
+    const err = new Error("ACCOUNT_LOCKED");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const isMatch = await user.matchPassword(password);
+  if (!isMatch) {
+    user.loginAttempts = (user.loginAttempts || 0) + 1;
+    if (user.loginAttempts >= 10) {
+      user.lockUntil = new Date(Date.now() + 60 * 60 * 1000); // 1 hour lock
+    }
+    await user.save();
+    const err = new Error("INVALID_CREDENTIALS");
+    err.statusCode = 401;
+    throw err;
+  }
+
+  user.loginAttempts = 0;
+  user.lockUntil = undefined;
+  await user.save();
+
+  return buildAuthResponse(user);
 };
 
 export const getProfile = (user) => {

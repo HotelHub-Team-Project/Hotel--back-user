@@ -3,6 +3,7 @@ import { Room } from "../room/model.js";
 import { Review } from "../review/model.js";
 import { Reservation } from "../reservation/model.js";
 import * as roomService from "../room/service.js";
+import { Favorite } from "../favorite/model.js";
 
 const normalizeHotels = (docs) =>
   docs.map((doc) =>
@@ -31,6 +32,7 @@ const getReservedRoomIds = async (checkIn, checkOut) => {
 
 export const listHotels = async ({
   city,
+  keyword,
   guests,
   sort,
   page = 1,
@@ -42,9 +44,14 @@ export const listHotels = async ({
   freebies,
   checkIn,
   checkOut,
+  userId,
 }) => {
   const query = { status: "approved" };
   if (city) query.city = city;
+  if (keyword) {
+    const regex = new RegExp(keyword, "i");
+    query.$or = [{ city: regex }, { name: regex }];
+  }
   if (ratingMin !== undefined) {
     query.ratingAverage = { $gte: Number(ratingMin) };
   }
@@ -114,6 +121,15 @@ export const listHotels = async ({
     items = normalizeHotels(docs);
   }
 
+  if (userId && items.length) {
+    const favorites = await Favorite.find({ userId }).select("hotelId").lean();
+    const favSet = new Set(favorites.map((f) => f.hotelId.toString()));
+    items = items.map((item) => ({
+      ...item,
+      isFavorite: favSet.has(item.id || item._id?.toString()),
+    }));
+  }
+
   return {
     items,
     total,
@@ -123,7 +139,7 @@ export const listHotels = async ({
   };
 };
 
-export const getHotelDetail = async (id) => {
+export const getHotelDetail = async (id, { checkIn, checkOut, userId } = {}) => {
   const hotel = await Hotel.findById(id);
   if (!hotel) {
     const err = new Error("HOTEL_NOT_FOUND");
@@ -131,14 +147,20 @@ export const getHotelDetail = async (id) => {
     throw err;
   }
 
-  const rooms = await roomService.getRoomsByHotel(id);
+  const rooms = await roomService.getRoomsByHotel(id, { checkIn, checkOut });
   const reviews = await Review.find({ hotelId: id })
     .populate("userId", "name")
     .sort({ createdAt: -1 });
 
-  return { hotel, rooms, reviews };
+  let isFavorite = false;
+  if (userId) {
+    const fav = await Favorite.findOne({ userId, hotelId: id }).select("_id");
+    isFavorite = !!fav;
+  }
+
+  return { hotel, rooms, reviews, isFavorite };
 };
 
-export const listRoomsByHotel = async (id) => {
-  return roomService.getRoomsByHotel(id);
+export const listRoomsByHotel = async (id, { checkIn, checkOut } = {}) => {
+  return roomService.getRoomsByHotel(id, { checkIn, checkOut });
 };

@@ -15,6 +15,9 @@ const couponSchema = new Schema(
     status: { type: String, enum: ["active", "inactive"], default: "active" },
     validFrom: { type: Date, default: Date.now },
     validTo: { type: Date },
+    maxUses: { type: Number, default: 0 }, // 0 이면 무제한
+    usedCount: { type: Number, default: 0 },
+    usedUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
@@ -34,8 +37,11 @@ couponSchema.methods.isAvailableForUser = function (userId, now = new Date()) {
   const inDateRange =
     (!this.validFrom || this.validFrom <= now) &&
     (!this.validTo || this.validTo >= now);
-  const matchesUser = !this.userId || this.userId.toString() === userId.toString();
-  return isActive && inDateRange && matchesUser;
+  const matchesUser =
+    !this.userId || (userId && this.userId.toString() === userId.toString());
+  const underMaxUses = !this.maxUses || this.usedCount < this.maxUses;
+  const notUsedByUser = !userId || !this.usedUsers?.some((u) => u.toString() === userId.toString());
+  return isActive && inDateRange && matchesUser && underMaxUses && notUsedByUser;
 };
 
 export const Coupon = userConnection.model("Coupon", couponSchema);
