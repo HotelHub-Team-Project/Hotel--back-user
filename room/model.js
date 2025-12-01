@@ -10,13 +10,13 @@ const roomSchema = new Schema(
     type: { type: String, required: true, trim: true },
     price: { type: Number, required: true, min: 0 },
     capacity: { type: Number, required: true, min: 1 },
-    inventory: { type: Number, required: true, min: 0 },
+    inventory: { type: Number, required: true, min: 0, default: 1 },
     images: [{ type: String, trim: true }],
     amenities: [{ type: String, trim: true }],
     status: {
-      type: String,
-      enum: ["active", "inactive"],
-      default: "active",
+    type: String,
+    enum: ["active", "inactive"],
+    default: "active",
     },
   },
   {

@@ -9,9 +9,14 @@ import { successResponse } from "./common/response.js";
 
 const app = express();
 
+const allowedOrigins = (process.env.FRONT_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim().replace(/\/$/, "")) // strip trailing slash to match browser origin exactly
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.FRONT_ORIGIN || "http://localhost:5173",
+    origin: allowedOrigins,
     credentials: true,
   })
 );

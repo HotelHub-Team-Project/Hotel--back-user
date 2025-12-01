@@ -5,12 +5,13 @@ import {
   listRoomsByHotel,
   listRooms,
 } from "./controller.js";
+import { optionalAuth } from "../common/authMiddleware.js";
 
 const router = Router();
 
-router.get("/", listHotels);
-router.get("/rooms", listRooms);
-router.get("/:id/rooms", listRoomsByHotel);
-router.get("/:id", getHotelDetail);
+router.get("/", optionalAuth, listHotels);
+router.get("/rooms", optionalAuth, listRooms);
+router.get("/:id/rooms", optionalAuth, listRoomsByHotel);
+router.get("/:id", optionalAuth, getHotelDetail);
 
 export default router;

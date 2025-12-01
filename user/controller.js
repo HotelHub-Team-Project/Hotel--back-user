@@ -1,6 +1,7 @@
 import * as userService from "./service.js";
 import { successResponse, errorResponse } from "../common/response.js";
 import Joi from "joi";
+import { createPresignedUploadUrl } from "../common/s3.js";
 
 const profileSchema = Joi.object({
   name: Joi.string().trim().optional(),
@@ -18,6 +19,11 @@ const imageSchema = Joi.object({
   avatarUrl: Joi.string().uri().optional(),
   coverUrl: Joi.string().uri().optional(),
 }).or("avatarUrl", "coverUrl");
+
+const uploadUrlSchema = Joi.object({
+  type: Joi.string().valid("avatar", "cover").required(),
+  contentType: Joi.string().required(),
+});
 
 export const updateProfile = async (req, res) => {
   try {
@@ -70,6 +76,28 @@ export const updateProfileImage = async (req, res) => {
     return res
       .status(200)
       .json(successResponse(data, "PROFILE_IMAGE_UPDATED", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const getProfileImageUploadUrl = async (req, res) => {
+  try {
+    const { error } = uploadUrlSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+    const { type, contentType } = req.body;
+    const keyPrefix = `users/${req.user._id}/${type}`;
+    const data = await createPresignedUploadUrl({
+      keyPrefix,
+      contentType,
+    });
+    return res.status(200).json(successResponse(data, "UPLOAD_URL_CREATED", 200));
   } catch (err) {
     return res
       .status(err.statusCode || 400)

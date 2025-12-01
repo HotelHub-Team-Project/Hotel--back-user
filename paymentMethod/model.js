@@ -1,17 +1,16 @@
 import mongoose from "mongoose";
-import { businessConnection } from "../config/db.js";
+import { userConnection } from "../config/db.js";
 
 const paymentMethodSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    provider: { type: String, enum: ["toss"], default: "toss" },
-    billingKey: { type: String, required: true },
+    provider: { type: String, enum: ["manual"], default: "manual" },
+    nickname: { type: String, trim: true },
     cardBrand: { type: String },
-    cardIssuer: { type: String },
-    cardLast4: { type: String },
-    cardNumberMasked: { type: String },
-    cardType: { type: String }, // credit/debit 등
-    country: { type: String },
+    cardLast4: { type: String, required: true },
+    cardNumberMasked: { type: String, required: true },
+    cardExpirationMonth: { type: String, required: true },
+    cardExpirationYear: { type: String, required: true },
     isDefault: { type: Boolean, default: false },
   },
   {
@@ -28,9 +27,11 @@ paymentMethodSchema.set("toJSON", {
     ret.paymentMethodId = ret._id;
     delete ret._id;
     delete ret.__v;
-    delete ret.billingKey; // 민감 토큰은 숨김
   },
 });
 
-export const PaymentMethod = businessConnection.model("PaymentMethod", paymentMethodSchema);
+export const PaymentMethod = userConnection.model(
+  "PaymentMethod",
+  paymentMethodSchema
+);
 export default PaymentMethod;
