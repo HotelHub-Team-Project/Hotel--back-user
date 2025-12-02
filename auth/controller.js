@@ -33,6 +33,11 @@ const resetPasswordSchema = Joi.object({
   newPassword: Joi.string().min(6).required(),
 });
 
+const verifyResetCodeSchema = Joi.object({
+  email: Joi.string().email().required(),
+  code: Joi.string().required(),
+});
+
 const emailChangeRequestSchema = Joi.object({
   newEmail: Joi.string().email().required(),
 });
@@ -174,6 +179,25 @@ export const resetPassword = async (req, res) => {
     return res
       .status(200)
       .json(successResponse(data, "PASSWORD_RESET", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const verifyPasswordResetCode = async (req, res) => {
+  try {
+    const { error } = verifyResetCodeSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(errorResponse(error.details[0].message, 400));
+    }
+    const data = await authService.verifyPasswordResetCode(req.body);
+    return res
+      .status(200)
+      .json(successResponse(data, "PASSWORD_RESET_CODE_VALID", 200));
   } catch (err) {
     return res
       .status(err.statusCode || 400)

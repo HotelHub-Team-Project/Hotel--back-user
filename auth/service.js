@@ -395,6 +395,17 @@ export const resetPassword = async ({ email, code, newPassword }) => {
   return buildAuthResponse(user);
 };
 
+export const verifyPasswordResetCode = async ({ email, code }) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    const err = new Error("USER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+  assertCodeValid(user, "passwordReset", code, "RESET_CODE_NOT_FOUND");
+  return { email, valid: true };
+};
+
 export const requestEmailChange = async (userId, { newEmail }) => {
   const existing = await User.findOne({ email: newEmail });
   if (existing) {
