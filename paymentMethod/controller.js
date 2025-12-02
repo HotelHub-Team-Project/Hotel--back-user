@@ -9,6 +9,7 @@ const createSchema = Joi.object({
   cardHolder: Joi.string().optional(),
   nickname: Joi.string().optional(),
   cardBrand: Joi.string().optional(),
+  country: Joi.string().optional(),
   isDefault: Joi.boolean().optional(),
 });
 

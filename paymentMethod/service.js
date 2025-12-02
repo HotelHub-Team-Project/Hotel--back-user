@@ -18,6 +18,7 @@ export const addPaymentMethod = async (userId, payload) => {
     cardExpirationMonth,
     cardHolder,
     nickname,
+    country,
     isDefault,
   } = payload;
 
@@ -45,6 +46,8 @@ export const addPaymentMethod = async (userId, payload) => {
     cardNumberMasked: masked,
     cardExpirationMonth,
     cardExpirationYear,
+    cardHolder,
+    country,
     isDefault: !!isDefault,
   });
 
