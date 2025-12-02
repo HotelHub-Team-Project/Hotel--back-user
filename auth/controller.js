@@ -41,6 +41,21 @@ const emailChangeConfirmSchema = Joi.object({
   code: Joi.string().required(),
 });
 
+const redirectWithToken = (res, data, redirectUri) => {
+  if (!redirectUri) {
+    return res.status(200).json(successResponse(data, "LOGIN_SUCCESS", 200));
+  }
+
+  const url = new URL(redirectUri);
+  url.hash =
+    `token=${encodeURIComponent(data.token)}` +
+    `&name=${encodeURIComponent(data.name || "")}` +
+    `&email=${encodeURIComponent(data.email || "")}` +
+    (data.provider ? `&provider=${encodeURIComponent(data.provider)}` : "");
+
+  return res.redirect(url.toString());
+};
+
 export const register = async (req, res) => {
   try {
     const { error } = registerSchema.validate(req.body);
@@ -235,19 +250,94 @@ export const kakaoCallback = async (req, res) => {
       redirectUri: process.env.KAKAO_REDIRECT_URI,
     });
 
-    // 프론트로 리다이렉트 (토큰 전달) or JSON 반환
-    const frontendRedirect = process.env.KAKAO_LOGIN_REDIRECT;
-    if (frontendRedirect) {
-      const url = new URL(frontendRedirect);
-      url.hash = `token=${encodeURIComponent(
-        data.token
-      )}&name=${encodeURIComponent(data.name || "")}&email=${encodeURIComponent(
-        data.email || ""
-      )}`;
-      return res.redirect(url.toString());
+    return redirectWithToken(res, data, process.env.KAKAO_LOGIN_REDIRECT);
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const naverRedirect = (_req, res) => {
+  const clientId = process.env.NAVER_CLIENT_ID;
+  const redirectUri = process.env.NAVER_REDIRECT_URI;
+  const state = process.env.NAVER_LOGIN_STATE || "naver_oauth";
+
+  if (!clientId || !redirectUri) {
+    return res
+      .status(500)
+      .json(errorResponse("NAVER_OAUTH_CONFIG_MISSING", 500));
+  }
+
+  const naverAuthUrl =
+    "https://nid.naver.com/oauth2.0/authorize" +
+    `?client_id=${encodeURIComponent(clientId)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    "&response_type=code" +
+    `&state=${encodeURIComponent(state)}`;
+
+  return res.redirect(naverAuthUrl);
+};
+
+export const naverCallback = async (req, res) => {
+  try {
+    const { code, state } = req.query;
+    if (!code) {
+      return res.status(400).json(errorResponse("AUTH_CODE_REQUIRED", 400));
     }
 
-    return res.status(200).json(successResponse(data, "LOGIN_SUCCESS", 200));
+    const data = await authService.naverLogin({
+      code,
+      state,
+      redirectUri: process.env.NAVER_REDIRECT_URI,
+    });
+
+    return redirectWithToken(res, data, process.env.NAVER_LOGIN_REDIRECT);
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const googleRedirect = (_req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  const state = process.env.GOOGLE_LOGIN_STATE || "google_oauth";
+  const scope = encodeURIComponent("openid email profile");
+
+  if (!clientId || !redirectUri) {
+    return res
+      .status(500)
+      .json(errorResponse("GOOGLE_OAUTH_CONFIG_MISSING", 500));
+  }
+
+  const googleAuthUrl =
+    "https://accounts.google.com/o/oauth2/v2/auth" +
+    `?client_id=${encodeURIComponent(clientId)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    "&response_type=code" +
+    `&scope=${scope}` +
+    "&access_type=offline" +
+    `&state=${encodeURIComponent(state)}`;
+
+  return res.redirect(googleAuthUrl);
+};
+
+export const googleCallback = async (req, res) => {
+  try {
+    const { code, state } = req.query;
+    if (!code) {
+      return res.status(400).json(errorResponse("AUTH_CODE_REQUIRED", 400));
+    }
+
+    const data = await authService.googleLogin({
+      code,
+      state,
+      redirectUri: process.env.GOOGLE_REDIRECT_URI,
+    });
+
+    return redirectWithToken(res, data, process.env.GOOGLE_LOGIN_REDIRECT);
   } catch (err) {
     return res
       .status(err.statusCode || 400)

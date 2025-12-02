@@ -12,8 +12,40 @@ const signToken = (id) => {
 const generateSocialPassword = (providerId) =>
   `social_${providerId}_${Date.now()}`;
 
-const ensureEmail = (email, providerId) =>
-  email || `kakao_${providerId}@kakao.local`;
+const ensureEmail = (email, provider, providerId) =>
+  email || `${provider}_${providerId}@${provider}.local`;
+
+const buildSocialName = (provider, providerId, name) =>
+  name || `${provider}_user_${String(providerId).slice(-4)}`;
+
+const findOrCreateSocialUser = async ({
+  provider,
+  providerId,
+  email,
+  name,
+  phone,
+}) => {
+  if (!providerId) {
+    const err = new Error("SOCIAL_ID_REQUIRED");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const finalEmail = ensureEmail(email, provider, providerId);
+  const finalName = buildSocialName(provider, providerId, name);
+
+  let user = await User.findOne({ email: finalEmail });
+  if (!user) {
+    user = await User.create({
+      name: finalName,
+      email: finalEmail,
+      password: generateSocialPassword(providerId),
+      phone: phone || undefined,
+    });
+  }
+
+  return user;
+};
 
 const buildAuthResponse = (user) => ({
   _id: user._id,
@@ -152,23 +184,151 @@ export const kakaoLogin = async ({ code, redirectUri }) => {
   const kakaoId = kakaoProfile.id;
   const account = kakaoProfile.kakao_account || {};
 
-  const email = ensureEmail(account.email, kakaoId);
-  const name =
-    account.profile?.nickname ||
-    account.name ||
-    `kakao_user_${String(kakaoId).slice(-4)}`;
-
-  let user = await User.findOne({ email });
-  if (!user) {
-    user = await User.create({
-      name,
-      email,
-      password: generateSocialPassword(kakaoId),
-      phone: account.phone_number || undefined,
-    });
-  }
+  const email = ensureEmail(account.email, "kakao", kakaoId);
+  const name = account.profile?.nickname || account.name;
+  const user = await findOrCreateSocialUser({
+    provider: "kakao",
+    providerId: kakaoId,
+    email,
+    name,
+    phone: account.phone_number,
+  });
 
   return { ...buildAuthResponse(user), provider: "kakao" };
+};
+
+export const naverLogin = async ({ code, state, redirectUri }) => {
+  const clientId = process.env.NAVER_CLIENT_ID;
+  const clientSecret = process.env.NAVER_CLIENT_SECRET;
+  const finalRedirectUri =
+    redirectUri || process.env.NAVER_REDIRECT_URI || "";
+
+  if (!clientId || !clientSecret || !finalRedirectUri) {
+    const err = new Error("NAVER_OAUTH_CONFIG_MISSING");
+    err.statusCode = 500;
+    throw err;
+  }
+
+  const tokenParams = new URLSearchParams({
+    grant_type: "authorization_code",
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: finalRedirectUri,
+    code,
+    state: state || "naver_oauth",
+  });
+
+  const tokenRes = await axios.post(
+    "https://nid.naver.com/oauth2.0/token",
+    tokenParams,
+    {
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    }
+  );
+
+  const { access_token: accessToken } = tokenRes.data;
+  if (!accessToken) {
+    const err = new Error("NAVER_TOKEN_FAILED");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const profileRes = await axios.get("https://openapi.naver.com/v1/nid/me", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  const naverProfile = profileRes.data?.response;
+  if (!naverProfile) {
+    const err = new Error("NAVER_PROFILE_FAILED");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const naverId = naverProfile.id;
+  const email = ensureEmail(naverProfile.email, "naver", naverId);
+  const name = naverProfile.nickname || naverProfile.name;
+  const user = await findOrCreateSocialUser({
+    provider: "naver",
+    providerId: naverId,
+    email,
+    name,
+    phone: naverProfile.mobile || naverProfile.mobile_e164,
+  });
+
+  return { ...buildAuthResponse(user), provider: "naver" };
+};
+
+export const googleLogin = async ({ code, redirectUri }) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const finalRedirectUri =
+    redirectUri || process.env.GOOGLE_REDIRECT_URI || "";
+
+  if (!clientId || !clientSecret || !finalRedirectUri) {
+    const err = new Error("GOOGLE_OAUTH_CONFIG_MISSING");
+    err.statusCode = 500;
+    throw err;
+  }
+
+  const tokenParams = new URLSearchParams({
+    code,
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: finalRedirectUri,
+    grant_type: "authorization_code",
+  });
+
+  const tokenRes = await axios.post(
+    "https://oauth2.googleapis.com/token",
+    tokenParams,
+    {
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    }
+  );
+
+  const { access_token: accessToken, id_token: idToken } = tokenRes.data;
+  if (!accessToken && !idToken) {
+    const err = new Error("GOOGLE_TOKEN_FAILED");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  let profile;
+  if (accessToken) {
+    const profileRes = await axios.get(
+      "https://www.googleapis.com/oauth2/v2/userinfo",
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    profile = profileRes.data;
+  }
+
+  if (!profile && idToken) {
+    try {
+      const payload = idToken.split(".")[1];
+      profile = JSON.parse(Buffer.from(payload, "base64").toString());
+    } catch (_err) {
+      // ignore
+    }
+  }
+
+  if (!profile) {
+    const err = new Error("GOOGLE_PROFILE_FAILED");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const googleId = profile.sub || profile.id;
+  const email = ensureEmail(profile.email, "google", googleId);
+  const name = profile.name || profile.given_name || profile.family_name;
+  const user = await findOrCreateSocialUser({
+    provider: "google",
+    providerId: googleId,
+    email,
+    name,
+    phone: profile.phone_number,
+  });
+
+  return { ...buildAuthResponse(user), provider: "google" };
 };
 
 export const sendEmailVerificationCode = async ({ email }) => {
