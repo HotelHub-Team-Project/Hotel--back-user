@@ -342,8 +342,8 @@ export const sendEmailVerificationCode = async ({ email }) => {
   await user.save();
   await sendMail({
     to: email,
-    subject: "[KDT-Hotel-Project] 비밀번호 재설정 이메일 인증 코드",
-    text: `재설정 인증 코드: ${code}\n15분 이내에 입력해 주세요.`,
+    subject: "[KDT-Hotel-Project] 이메일 인증 코드",
+    text: `인증 코드: ${code}\n15분 이내에 입력해 주세요.`,
   });
   return { email, sent: true };
 };
