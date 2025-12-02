@@ -342,7 +342,7 @@ export const sendEmailVerificationCode = async ({ email }) => {
   await user.save();
   await sendMail({
     to: email,
-    subject: "[Hotel] 이메일 인증 코드",
+    subject: "[KDT-Hotel-Project] 이메일 인증 코드",
     text: `인증 코드: ${code}\n15분 이내에 입력해 주세요.`,
   });
   return { email, sent: true };
@@ -393,6 +393,17 @@ export const resetPassword = async ({ email, code, newPassword }) => {
   user.passwordResetExpires = undefined;
   await user.save();
   return buildAuthResponse(user);
+};
+
+export const verifyPasswordResetCode = async ({ email, code }) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    const err = new Error("USER_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+  assertCodeValid(user, "passwordReset", code, "RESET_CODE_NOT_FOUND");
+  return { email, valid: true };
 };
 
 export const requestEmailChange = async (userId, { newEmail }) => {

@@ -9,6 +9,7 @@ import {
   verifyEmailCode,
   forgotPassword,
   resetPassword,
+  verifyPasswordResetCode,
   requestEmailChange,
   confirmEmailChange,
   naverRedirect,
@@ -26,6 +27,7 @@ router.get("/me", verifyToken, me);
 router.post("/email/send-code", sendEmailVerificationCode);
 router.post("/email/verify", verifyEmailCode);
 router.post("/password/forgot", forgotPassword);
+router.post("/password/verify", verifyPasswordResetCode);
 router.post("/password/reset", resetPassword);
 router.post("/email/change/request", verifyToken, requestEmailChange);
 router.post("/email/change/confirm", verifyToken, confirmEmailChange);
