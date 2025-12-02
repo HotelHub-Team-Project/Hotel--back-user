@@ -11,6 +11,8 @@ const paymentMethodSchema = new mongoose.Schema(
     cardNumberMasked: { type: String, required: true },
     cardExpirationMonth: { type: String, required: true },
     cardExpirationYear: { type: String, required: true },
+    cardHolder: { type: String, trim: true },
+    country: { type: String, trim: true },
     isDefault: { type: Boolean, default: false },
   },
   {
