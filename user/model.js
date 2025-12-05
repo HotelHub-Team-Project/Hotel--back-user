@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { userConnection } from "../config/db.js";
+import { dbConnection } from "../config/db.js";
 import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
@@ -58,5 +58,5 @@ userSchema.set("toJSON", {
   },
 });
 
-export const User = userConnection.model("User", userSchema);
+export const User = dbConnection.model("User", userSchema);
 export default User;

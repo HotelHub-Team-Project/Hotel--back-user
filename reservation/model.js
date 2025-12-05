@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { serviceConnection } from "../config/db.js";
+import { dbConnection } from "../config/db.js";
 
 const reservationSchema = new mongoose.Schema(
   {
@@ -51,5 +51,5 @@ reservationSchema.set("toJSON", {
   },
 });
 
-export const Reservation = serviceConnection.model("Reservation", reservationSchema);
+export const Reservation = dbConnection.model("Reservation", reservationSchema);
 export default Reservation;
