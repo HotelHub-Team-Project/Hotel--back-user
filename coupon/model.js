@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { userConnection } from "../config/db.js";
+import { dbConnection } from "../config/db.js";
 
 const { Schema } = mongoose;
 
@@ -44,5 +44,5 @@ couponSchema.methods.isAvailableForUser = function (userId, now = new Date()) {
   return isActive && inDateRange && matchesUser && underMaxUses && notUsedByUser;
 };
 
-export const Coupon = userConnection.model("Coupon", couponSchema);
+export const Coupon = dbConnection.model("Coupon", couponSchema);
 export default Coupon;

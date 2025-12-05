@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { serviceConnection } from "../config/db.js";
+import { dbConnection } from "../config/db.js";
 
 const { Schema } = mongoose;
 
@@ -29,5 +29,5 @@ paymentSchema.set("toJSON", {
   },
 });
 
-export const Payment = serviceConnection.model("Payment", paymentSchema);
+export const Payment = dbConnection.model("Payment", paymentSchema);
 export default Payment;
