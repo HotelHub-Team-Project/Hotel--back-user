@@ -4,29 +4,40 @@ export const listAvailableCoupons = async (userId) => {
   const now = new Date();
 
   const coupons = await Coupon.find({
-    status: "active",
-    $or: [{ userId }, { userId: { $exists: false } }],
+    $and: [{ $or: [{ isActive: true }, { isActive: { $exists: false } }] }],
   }).sort({ validTo: 1 });
 
   return coupons.filter((c) => c.isAvailableForUser(userId, now));
 };
 
-const computeDiscount = (coupon, amount) => {
-  if (coupon.discountType === "amount") {
-    return Math.max(0, Math.min(coupon.discountValue, amount));
+export const getCouponByCode = async (userId, code) => {
+  const now = new Date();
+  const normalizedCode = code.trim().toUpperCase();
+  const coupon = await Coupon.findOne({ code: normalizedCode });
+  if (!coupon) {
+    const err = new Error("COUPON_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
   }
-  if (coupon.discountType === "percent") {
-    return Math.max(
-      0,
-      Math.min(Math.round((amount * coupon.discountValue) / 100), amount)
-    );
+  if (!coupon.isAvailableForUser(userId, now)) {
+    const err = new Error("COUPON_NOT_AVAILABLE");
+    err.statusCode = 400;
+    throw err;
   }
-  return 0;
+  return coupon;
 };
+
+const computeDiscount = (coupon, amount) => {
+  const value = coupon.discountAmount ?? 0;
+  return Math.max(0, Math.min(value, amount));
+};
+
+const getMinAmount = (coupon) => coupon.minOrderAmount ?? 0;
 
 export const applyCouponForAmount = async (userId, code, amount) => {
   const now = new Date();
-  const coupon = await Coupon.findOne({ code: code.trim() });
+  const normalizedCode = code.trim().toUpperCase();
+  const coupon = await Coupon.findOne({ code: normalizedCode });
   if (!coupon) {
     const err = new Error("COUPON_NOT_FOUND");
     err.statusCode = 404;
@@ -39,7 +50,8 @@ export const applyCouponForAmount = async (userId, code, amount) => {
     throw err;
   }
 
-  if (coupon.minAmount && amount < coupon.minAmount) {
+  const minAmount = getMinAmount(coupon);
+  if (minAmount && amount < minAmount) {
     const err = new Error("COUPON_MIN_AMOUNT_NOT_MET");
     err.statusCode = 400;
     throw err;
@@ -113,7 +125,8 @@ export const validateCouponForReservation = async (userId, reservation) => {
     throw err;
   }
 
-  if (coupon.minAmount && reservation.basePrice < coupon.minAmount) {
+  const minAmount = getMinAmount(coupon);
+  if (minAmount && reservation.basePrice < minAmount) {
     const err = new Error("COUPON_MIN_AMOUNT_NOT_MET");
     err.statusCode = 400;
     throw err;

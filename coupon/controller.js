@@ -7,6 +7,21 @@ const applySchema = Joi.object({
   amount: Joi.number().min(0).required(),
 });
 
+export const getCouponByCode = async (req, res) => {
+  try {
+    const code = req.params.code?.trim();
+    if (!code) {
+      return res.status(400).json(errorResponse("COUPON_CODE_REQUIRED", 400));
+    }
+    const data = await couponService.getCouponByCode(req.user._id, code);
+    return res.status(200).json(successResponse(data, "COUPON_DETAIL", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
 export const listAvailableCoupons = async (req, res) => {
   try {
     const data = await couponService.listAvailableCoupons(req.user._id);
