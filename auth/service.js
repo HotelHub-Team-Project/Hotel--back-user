@@ -51,6 +51,7 @@ const buildAuthResponse = (user) => ({
   _id: user._id,
   name: user.name,
   email: user.email,
+  role: user.role,
   emailVerified: user.emailVerified,
   token: signToken(user._id),
 });
@@ -134,6 +135,7 @@ export const getProfile = (user) => {
     _id: user._id,
     name: user.name,
     email: user.email,
+    role: user.role,
     phone: user.phone,
     emailVerified: user.emailVerified,
   };
