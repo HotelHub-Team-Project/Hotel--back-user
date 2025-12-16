@@ -27,9 +27,11 @@ export const addFavorite = async (req, res) => {
     }
 
     const { hotelId } = req.body;
+    console.log("[FAVORITE_ADD] user:", req.user?._id?.toString(), "hotelId:", hotelId);
     const data = await favoriteService.addFavorite(req.user._id, hotelId);
     return res.status(201).json(successResponse(data, "FAVORITE_ADDED", 201));
   } catch (err) {
+    console.error("[FAVORITE_ADD_ERROR]", err.message);
     return res
       .status(err.statusCode || 400)
       .json(errorResponse(err.message, err.statusCode || 400));
