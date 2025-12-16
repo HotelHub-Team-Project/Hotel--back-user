@@ -5,19 +5,23 @@ const { Schema } = mongoose;
 
 const favoriteSchema = new Schema(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    hotelId: { type: Schema.Types.ObjectId, ref: "Hotel", required: true, index: true },
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    hotel: { type: Schema.Types.ObjectId, ref: "Hotel", required: true, index: true },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
-favoriteSchema.index({ userId: 1, hotelId: 1 }, { unique: true });
+// user + hotel 조합으로 중복 방지
+favoriteSchema.index({ user: 1, hotel: 1 }, { unique: true });
 
 favoriteSchema.set("toJSON", {
   virtuals: true,
   transform: (_doc, ret) => {
     ret.id = ret._id;
     ret.favoriteId = ret._id;
+    // 프론트 호환용 필드
+    ret.userId = ret.user;
+    ret.hotelId = ret.hotel;
     delete ret._id;
     delete ret.__v;
   },
